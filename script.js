@@ -2,6 +2,7 @@ const input = document.getElementById("todo-input");
 const addBtn = document.getElementById("add-btn");
 const todoList = document.getElementById("todo-list");
 const emptyMsg = document.getElementById("empty-msg");
+const statsText = document.getElementById("stats-text");
 
 // Load todos from localStorage, or start empty
 let todos = JSON.parse(localStorage.getItem("todos") || "[]");
@@ -12,6 +13,15 @@ function saveTodos() {
 
 function updateEmptyMessage() {
   emptyMsg.style.display = todos.length === 0 ? "block" : "none";
+}
+
+function updateStats() {
+  if (todos.length === 0) {
+    statsText.textContent = "";
+    return;
+  }
+  const done = todos.filter((t) => t.completed).length;
+  statsText.textContent = `${done} of ${todos.length} done`;
 }
 
 function renderTodo(todo) {
@@ -25,7 +35,8 @@ function renderTodo(todo) {
   checkbox.type = "checkbox";
   checkbox.classList.add("todo-check");
   checkbox.checked = todo.completed;
-  checkbox.addEventListener("change", () => toggleTodo(todo.id, li));
+  checkbox.setAttribute("aria-label", `Mark "${todo.text}" as ${todo.completed ? "incomplete" : "complete"}`);
+  checkbox.addEventListener("change", () => toggleTodo(todo.id, li, checkbox));
 
   // Text
   const span = document.createElement("span");
@@ -36,6 +47,7 @@ function renderTodo(todo) {
   const deleteBtn = document.createElement("button");
   deleteBtn.classList.add("delete-btn");
   deleteBtn.title = "Delete";
+  deleteBtn.setAttribute("aria-label", `Delete "${todo.text}"`);
   deleteBtn.innerHTML = "&#10005;"; // ✕
   deleteBtn.addEventListener("click", () => deleteTodo(todo.id, li));
 
@@ -55,18 +67,21 @@ function addTodo() {
   saveTodos();
   renderTodo(todo);
   updateEmptyMessage();
+  updateStats();
 
   input.value = "";
   input.focus();
 }
 
-function toggleTodo(id, li) {
+function toggleTodo(id, li, checkbox) {
   const todo = todos.find((t) => t.id === id);
   if (!todo) return;
 
   todo.completed = !todo.completed;
   li.classList.toggle("completed", todo.completed);
+  checkbox.setAttribute("aria-label", `Mark "${todo.text}" as ${todo.completed ? "incomplete" : "complete"}`);
   saveTodos();
+  updateStats();
 }
 
 function deleteTodo(id, li) {
@@ -74,13 +89,14 @@ function deleteTodo(id, li) {
   saveTodos();
 
   // Fade-out animation before removal
-  li.style.transition = "opacity 0.2s, transform 0.2s";
+  li.style.transition = "opacity 0.22s ease, transform 0.22s ease";
   li.style.opacity = "0";
-  li.style.transform = "translateX(12px)";
+  li.style.transform = "translateX(14px) scale(0.97)";
   setTimeout(() => {
     li.remove();
     updateEmptyMessage();
-  }, 200);
+    updateStats();
+  }, 220);
 }
 
 // ── Event listeners ──
@@ -93,3 +109,4 @@ input.addEventListener("keydown", (e) => {
 // ── Initial render ──
 todos.forEach(renderTodo);
 updateEmptyMessage();
+updateStats();
